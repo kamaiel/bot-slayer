@@ -1,25 +1,27 @@
 package algorithms;
 
+import robotsimulator.Brain;
 import characteristics.IRadarResult;
 import characteristics.Parameters;
 import grafcet.IState;
 import grafcet.State;
-import robotsimulator.Brain;
 
 public class MyBrainStage5 extends Brain {
     IState INIT;
-    IState GOSOUTH;
-    IState TURNEAST;
-    IState GOEAST;
-    IState RDV;
-
-    IState currentState;
+    IState MOVETOPOINT;
+    IState TURNAROUND;
+    IState TURNINGMOVE;
 
     private static final int ROCKY = 0x1EADDA;
     private static final int MARIO = 0x5EC0;
 
+    private static final double targetX = 2000;
+    private static final double targetY = 500;
+
     // ---VARIABLES---//
+    IState currentState;
     private double myX;
+    private double myY;
     private int whoAmI;
 
     public MyBrainStage5() {
@@ -27,58 +29,58 @@ public class MyBrainStage5 extends Brain {
     }
 
     public void activate() {
-        // ODOMETRY CODE
         whoAmI = ROCKY;
         for (IRadarResult o : detectRadar())
             if (Helpers.isSameDirection(o.getObjectDirection(), Parameters.NORTH))
                 whoAmI = MARIO;
+
         if (whoAmI == MARIO) {
             myX = Parameters.teamASecondaryBot2InitX;
+            myY = Parameters.teamASecondaryBot2InitY;
         } else {
-            myX = 0;
+            myX = Parameters.teamASecondaryBot1InitX;
+            myY = Parameters.teamASecondaryBot1InitY;
         }
         currentState = buildGrafcet();
     }
 
     public void step() {
-        currentState.evalState();
-        currentState = currentState.evalTransitionsCondition();
+        if (whoAmI == ROCKY) {
+            currentState = currentState.evalTransitionsCondition();
+            currentState.evalState();
+        }
+
     }
 
-    private IState buildGrafcet() {
+    public IState buildGrafcet() {
         INIT = new State(() -> {
             stepTurn(Parameters.Direction.LEFT);
         });
-        GOSOUTH = new State(() -> {
+        MOVETOPOINT = new State(() -> {
             move();
+            myX+=Parameters.teamASecondaryBotSpeed*Math.cos(getHeading());
+            myY+=Parameters.teamASecondaryBotSpeed*Math.sin(getHeading());
         });
-        TURNEAST = new State(() -> {
+        TURNAROUND = new State(() -> {
             stepTurn(Parameters.Direction.LEFT);
-            myX=0;
         });
-        GOEAST = new State(() -> {
+        TURNINGMOVE = new State(() -> {
             move();
-            myX+=Parameters.teamASecondaryBotSpeed;
-        });
-        RDV = new State(() -> {
         });
 
-        INIT.addNextState(GOSOUTH);
-        GOSOUTH.addTransitionCondition(INIT.getId(), () -> Helpers.isSameDirection(getHeading(), Parameters.SOUTH));
+        INIT.addNextState(MOVETOPOINT);
+        MOVETOPOINT.addTransitionCondition(INIT.getId(),
+                () -> Helpers.asTurnInFrontOfPoint(myX, myY, targetX, targetY, getHeading()));
 
-        GOSOUTH.addNextState(TURNEAST);
-        TURNEAST.addTransitionCondition(GOSOUTH.getId(), () -> Helpers.isFrontWall(detectFront().getObjectType()));
+        MOVETOPOINT.addNextState(TURNAROUND);
+        TURNAROUND.addTransitionCondition(MOVETOPOINT.getId(), () -> (myX >= targetX && myY >= targetY));
 
-        TURNEAST.addNextState(GOEAST);
-        GOEAST.addTransitionCondition(TURNEAST.getId(), () -> Helpers.isSameDirection(getHeading(), Parameters.EAST));
+        TURNAROUND.addNextState(TURNINGMOVE);
+        TURNINGMOVE.addTransitionCondition(TURNAROUND.getId(), () -> true);
 
-        GOEAST.addNextState(RDV);
-        RDV.addTransitionCondition(GOEAST.getId(), () -> stop());
+        TURNINGMOVE.addNextState(TURNAROUND);
+        TURNAROUND.addTransitionCondition(TURNINGMOVE.getId(), () -> true);
 
         return INIT;
-    }
-
-    private boolean stop(){
-        return ((whoAmI==ROCKY && myX>=1000) || (whoAmI==MARIO && myX>=1500));
     }
 }

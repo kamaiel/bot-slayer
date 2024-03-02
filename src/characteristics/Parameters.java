@@ -40,8 +40,8 @@ public class Parameters {
                              teamAMainBot3InitY = 1200, //1 unit = 1mm, coordinate of central point
                              teamAMainBot3InitHeading = EAST; //clockwise trigonometric unit, according to screen pixel coordinate reference
 
-  public static final String teamASecondaryBotBrainClassName = "algorithms.BrainCanevas"; //class given by name; is supposed to extends robotsimulator.Brain
-  public static final String teamASecondaryBotAvatar = "avatars/clumpsy.png"; //path relative to location of ant build.xml file
+  public static final String teamASecondaryBotBrainClassName = "algorithms.MyBrainStage5"; //class given by name; is supposed to extends robotsimulator.Brain
+  public static final String teamASecondaryBotAvatar = "avatars/NicePng_spaceship-sprite-png_3369998.png"; //path relative to location of ant build.xml file
   public static final double teamASecondaryBotRadius = 50, //1 unit = 1mm, body radius
                              teamASecondaryBotFrontalDetectionRange = 500, //1 unit = 1mm, range of frontal sensor
                              teamASecondaryBotFrontalDetectionAngle = 0, //UNUSED AT THE MOMENT, frontal sensor detection angle is suppoed to be absolute
