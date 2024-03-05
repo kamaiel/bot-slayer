@@ -15,8 +15,8 @@ public class MyBrainStage5 extends Brain {
     private static final int ROCKY = 0x1EADDA;
     private static final int MARIO = 0x5EC0;
 
-    private static final double targetX = 2000;
-    private static final double targetY = 500;
+    private static final double targetX = 500;
+    private static final double targetY = 200;
 
     // ---VARIABLES---//
     IState currentState;

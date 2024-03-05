@@ -23,7 +23,7 @@ public abstract class Helpers extends Brain {
   private static final int MARIO = 0x5EC0;
   private static final int TEAM = 0xBADDAD;
 
-  private static final double ANGLEPRECISION = 0.1;
+  private static final double ANGLEPRECISION = 0.01;
 
   private static double normalize(double dir) {
     double res = dir;
@@ -81,6 +81,14 @@ public abstract class Helpers extends Brain {
   public static boolean asTurnInFrontOfPoint(double myX, double myY, double targetX, double targetY, double heading) {
     double angle = Math.atan2(targetY-myY, targetX-myX);
     return isSameDirection(heading, angle);
+  }
+
+  public static Parameters.Direction getDirection(double myX, double myY, double targetX, double targetY, double heading) {
+    double angle = Math.atan2(targetY-myY, targetX-myX);
+    if(angle - heading < 0){
+      return Parameters.Direction.LEFT;
+    }
+    return Parameters.Direction.RIGHT;
   }
 
   public static String initPosition(ArrayList<IRadarResult> detectRadar, double heading){
