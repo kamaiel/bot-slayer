@@ -12,7 +12,7 @@ public abstract class Helpers extends Brain {
   private static IFrontSensorResult.Types TEAMMATEMAIN = IFrontSensorResult.Types.TeamMainBot;
   private static IFrontSensorResult.Types TEAMMATESECOND = IFrontSensorResult.Types.TeamSecondaryBot;
 
-  private static final double ANGLEPRECISION = 0.01;
+  private static final double ANGLEPRECISION = 0.1;
 
   private static double normalize(double dir) {
     double res = dir;
@@ -43,5 +43,10 @@ public abstract class Helpers extends Brain {
 
   public static boolean asCompletelyTurned(double heading, double oldAngle) {
     return Math.abs(normalize(heading) - normalize(oldAngle + Parameters.RIGHTTURNFULLANGLE)) < ANGLEPRECISION;
+  }
+
+  public static boolean asTurnInFrontOfPoint(double myX, double myY, double targetX, double targetY, double heading) {
+    double angle = Math.atan2(targetY-myY, targetX-myX);
+    return isSameDirection(heading, angle);
   }
 }

@@ -35,8 +35,8 @@ public class State implements IState {
         return nextSates;
     }
 
-    public void addTransitionCondition(Integer stateId, BooleanSupplier supplier) {
-        transitionConditions.put(stateId, supplier);
+    public void addTransitionCondition(Integer fromStateId, BooleanSupplier supplier) {
+        transitionConditions.put(fromStateId, supplier);
     }
 
     public void addNextState(IState... states) {
