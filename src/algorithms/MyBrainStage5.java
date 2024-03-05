@@ -23,6 +23,7 @@ public class MyBrainStage5 extends Brain {
     private double myX;
     private double myY;
     private int whoAmI;
+    
 
     public MyBrainStage5() {
         super();
