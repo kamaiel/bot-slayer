@@ -66,7 +66,7 @@ public abstract class Helpers extends Brain {
       double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
       double enemyTop = enemyY - BOT_RADIUS * 2;
       double enemyBottom = enemyY + BOT_RADIUS * 2;
-      if ((enemyY < myY && enemyBottom > myTop) || (enemyY > myY && enemyTop < myBottom)) {
+      if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
         if (myX < enemyX)
           return EnemyDirection.WEST;
         else
@@ -80,7 +80,8 @@ public abstract class Helpers extends Brain {
     ArrayList<IRadarResult> res = new ArrayList<>();
 
     for (IRadarResult o : objects) {
-      if (o.getObjectType() == IRadarResult.Types.OpponentMainBot
+      if (o.getObjectType() == IRadarResult.Types.BULLET
+          || o.getObjectType() == IRadarResult.Types.OpponentMainBot
           || o.getObjectType() == IRadarResult.Types.OpponentSecondaryBot) {
         res.add(o);
       }
