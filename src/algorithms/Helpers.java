@@ -24,6 +24,11 @@ public abstract class Helpers extends Brain {
   private static final int TEAM = 0xBADDAD;
 
   private static final double ANGLEPRECISION = 0.01;
+  private static final double BOT_RADIUS = 50.0;
+
+  public enum EnemyDirection {
+    EAST, WEST, UNDEFINED
+  }
 
   private static double normalize(double dir) {
     double res = dir;
@@ -42,8 +47,8 @@ public abstract class Helpers extends Brain {
     return obstaclType == WALL;
   }
 
-  public static boolean isFrontOpponent(IFrontSensorResult.Types obstaclType) {
-    IFrontSensorResult.Types sensor = obstaclType;
+  public static boolean isFrontOpponent(IFrontSensorResult obstacle) {
+    IFrontSensorResult.Types sensor = obstacle.getObjectType();
     return sensor == OPPONENTMAIN || sensor == OPPONENTSECOND;
   }
 
@@ -52,11 +57,31 @@ public abstract class Helpers extends Brain {
     return sensor == TEAMMATEMAIN || sensor == TEAMMATESECOND;
   }
 
+  public static EnemyDirection isFrontRangeOpponent(ArrayList<IRadarResult> objects, double myX, double myY) {
+    ArrayList<IRadarResult> opponents = isRadarOpponent(objects);
+    double myTop = myY - BOT_RADIUS * 2;
+    double myBottom = myY + BOT_RADIUS * 2;
+    for (IRadarResult o : opponents) {
+      double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
+      double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
+      double enemyTop = enemyY - BOT_RADIUS * 2;
+      double enemyBottom = enemyY + BOT_RADIUS * 2;
+      if ((enemyY < myY && enemyBottom > myTop) || (enemyY > myY && enemyTop < myBottom)) {
+        if (myX < enemyX)
+          return EnemyDirection.WEST;
+        else
+          return EnemyDirection.EAST;
+      }
+    }
+    return EnemyDirection.UNDEFINED;
+  }
+
   public static ArrayList<IRadarResult> isRadarOpponent(ArrayList<IRadarResult> objects) {
     ArrayList<IRadarResult> res = new ArrayList<>();
 
-    for (IRadarResult o: objects){
-      if (o.getObjectType()==IRadarResult.Types.OpponentMainBot || o.getObjectType()==IRadarResult.Types.OpponentSecondaryBot) {
+    for (IRadarResult o : objects) {
+      if (o.getObjectType() == IRadarResult.Types.OpponentMainBot
+          || o.getObjectType() == IRadarResult.Types.OpponentSecondaryBot) {
         res.add(o);
       }
     }
@@ -66,8 +91,9 @@ public abstract class Helpers extends Brain {
   public static ArrayList<IRadarResult> isRadarTeamMate(ArrayList<IRadarResult> objects) {
     ArrayList<IRadarResult> res = new ArrayList<>();
 
-    for (IRadarResult o: objects){
-      if (o.getObjectType()==IRadarResult.Types.TeamMainBot || o.getObjectType()==IRadarResult.Types.TeamSecondaryBot) {
+    for (IRadarResult o : objects) {
+      if (o.getObjectType() == IRadarResult.Types.TeamMainBot
+          || o.getObjectType() == IRadarResult.Types.TeamSecondaryBot) {
         res.add(o);
       }
     }
@@ -79,70 +105,72 @@ public abstract class Helpers extends Brain {
   }
 
   public static boolean asTurnInFrontOfPoint(double myX, double myY, double targetX, double targetY, double heading) {
-    double angle = Math.atan2(targetY-myY, targetX-myX);
+    double angle = Math.atan2(targetY - myY, targetX - myX);
     return isSameDirection(heading, angle);
   }
 
-  public static Parameters.Direction getDirection(double myX, double myY, double targetX, double targetY, double heading) {
-    double angle = Math.atan2(targetY-myY, targetX-myX);
-    if(angle - heading < 0){
+  public static Parameters.Direction getDirection(double myX, double myY, double targetX, double targetY,
+      double heading) {
+    double angle = Math.atan2(targetY - myY, targetX - myX);
+    if (angle - heading < 0) {
       return Parameters.Direction.LEFT;
     }
     return Parameters.Direction.RIGHT;
   }
 
-  public static String initPosition(ArrayList<IRadarResult> detectRadar, double heading){
+  public static String initPosition(ArrayList<IRadarResult> detectRadar, double heading) {
     boolean detectNorth = false;
     boolean detectSouth = false;
     boolean detectWest = false;
     boolean detectEast = false;
     boolean teamA = false;
-    int whoAmI = -1;;
-    String res="";
-    
-    for (IRadarResult o: detectRadar) {
-        if (Helpers.isSameDirection(o.getObjectDirection(),Parameters.NORTH))
-            detectNorth = true;
-        if (Helpers.isSameDirection(o.getObjectDirection(),Parameters.SOUTH)) 
-            detectSouth = true;
-        if (Helpers.isSameDirection(o.getObjectDirection(),Parameters.EAST)) 
-            detectEast = true;
-        if (Helpers.isSameDirection(o.getObjectDirection(),Parameters.WEST)) 
-            detectWest = true;
-    }
-    if (Helpers.isSameDirection(heading,Parameters.EAST))
-        teamA = true;
+    int whoAmI = -1;
+    ;
+    String res = "";
 
-      if(detectNorth){
-        if(detectSouth)
-            whoAmI=ALPHA;
-        else if(detectEast)
-            whoAmI=teamA ? BETA : MARIO;
-        else if(detectWest)
-            whoAmI=teamA ? MARIO : BETA;
-    }else{
-        if(detectEast)
-            whoAmI=teamA ? GAMMA : ROCKY;
-        else if(detectWest)
-            whoAmI=teamA ? ROCKY : GAMMA;
+    for (IRadarResult o : detectRadar) {
+      if (Helpers.isSameDirection(o.getObjectDirection(), Parameters.NORTH))
+        detectNorth = true;
+      if (Helpers.isSameDirection(o.getObjectDirection(), Parameters.SOUTH))
+        detectSouth = true;
+      if (Helpers.isSameDirection(o.getObjectDirection(), Parameters.EAST))
+        detectEast = true;
+      if (Helpers.isSameDirection(o.getObjectDirection(), Parameters.WEST))
+        detectWest = true;
+    }
+    if (Helpers.isSameDirection(heading, Parameters.EAST))
+      teamA = true;
+
+    if (detectNorth) {
+      if (detectSouth)
+        whoAmI = ALPHA;
+      else if (detectEast)
+        whoAmI = teamA ? BETA : MARIO;
+      else if (detectWest)
+        whoAmI = teamA ? MARIO : BETA;
+    } else {
+      if (detectEast)
+        whoAmI = teamA ? GAMMA : ROCKY;
+      else if (detectWest)
+        whoAmI = teamA ? ROCKY : GAMMA;
     }
     res += whoAmI + ":";
 
-    if (whoAmI == GAMMA){
-        res += (teamA ? Parameters.teamAMainBot1InitX :  Parameters.teamBMainBot1InitX) + ":";
-        res +=teamA ? Parameters.teamAMainBot1InitY :  Parameters.teamBMainBot1InitY;
+    if (whoAmI == GAMMA) {
+      res += (teamA ? Parameters.teamAMainBot1InitX : Parameters.teamBMainBot1InitX) + ":";
+      res += teamA ? Parameters.teamAMainBot1InitY : Parameters.teamBMainBot1InitY;
     } else if (whoAmI == ALPHA) {
-        res +=(teamA ? Parameters.teamAMainBot2InitX :Parameters.teamBMainBot2InitX) + ":";
-        res +=teamA ? Parameters.teamAMainBot2InitY :Parameters.teamBMainBot2InitY;
-    } else if (whoAmI == BETA){
-        res+=(teamA ? Parameters.teamAMainBot3InitX : Parameters.teamBMainBot3InitX) + ":";
-        res+=teamA ? Parameters.teamAMainBot3InitY : Parameters.teamBMainBot3InitY;
-    } else if (whoAmI==ROCKY) {
-        res+=(teamA ? Parameters.teamASecondaryBot1InitX : Parameters.teamBSecondaryBot1InitX) + ":";
-        res+=teamA ? Parameters.teamASecondaryBot1InitY : Parameters.teamBSecondaryBot1InitY;
+      res += (teamA ? Parameters.teamAMainBot2InitX : Parameters.teamBMainBot2InitX) + ":";
+      res += teamA ? Parameters.teamAMainBot2InitY : Parameters.teamBMainBot2InitY;
+    } else if (whoAmI == BETA) {
+      res += (teamA ? Parameters.teamAMainBot3InitX : Parameters.teamBMainBot3InitX) + ":";
+      res += teamA ? Parameters.teamAMainBot3InitY : Parameters.teamBMainBot3InitY;
+    } else if (whoAmI == ROCKY) {
+      res += (teamA ? Parameters.teamASecondaryBot1InitX : Parameters.teamBSecondaryBot1InitX) + ":";
+      res += teamA ? Parameters.teamASecondaryBot1InitY : Parameters.teamBSecondaryBot1InitY;
     } else {
-        res+=(teamA ? Parameters.teamASecondaryBot2InitX : Parameters.teamBSecondaryBot2InitX) + ":";
-        res+=teamA ? Parameters.teamASecondaryBot2InitY : Parameters.teamBSecondaryBot2InitY;
+      res += (teamA ? Parameters.teamASecondaryBot2InitX : Parameters.teamBSecondaryBot2InitX) + ":";
+      res += teamA ? Parameters.teamASecondaryBot2InitY : Parameters.teamBSecondaryBot2InitY;
     }
     return res;
   }
