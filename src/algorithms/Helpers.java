@@ -23,7 +23,7 @@ public abstract class Helpers extends Brain {
   private static final int MARIO = 0x5EC0;
   private static final int TEAM = 0xBADDAD;
 
-  private static final double ANGLEPRECISION = 0.01;
+  private static final double ANGLEPRECISION = 0.05;
   private static final double BOT_RADIUS = 50.0;
 
   public enum EnemyDirection {
@@ -76,12 +76,24 @@ public abstract class Helpers extends Brain {
     return EnemyDirection.UNDEFINED;
   }
 
+
+  public static boolean isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading) {
+    for (IRadarResult o : objects) {
+      //System.out.println(heading+" "+o.getObjectDirection()+" "+o.getObjectDistance()+" "+o.getObjectRadius());
+      if (heading+Math.PI/2.5>=o.getObjectDirection() 
+        && heading-Math.PI/2.5<=o.getObjectDirection()
+        && o.getObjectDistance()<4*BOT_RADIUS) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static ArrayList<IRadarResult> isRadarOpponent(ArrayList<IRadarResult> objects) {
     ArrayList<IRadarResult> res = new ArrayList<>();
 
     for (IRadarResult o : objects) {
-      if (o.getObjectType() == IRadarResult.Types.BULLET
-          || o.getObjectType() == IRadarResult.Types.OpponentMainBot
+          if (o.getObjectType() == IRadarResult.Types.OpponentMainBot
           || o.getObjectType() == IRadarResult.Types.OpponentSecondaryBot) {
         res.add(o);
       }
@@ -119,7 +131,7 @@ public abstract class Helpers extends Brain {
     return Parameters.Direction.RIGHT;
   }
 
-  public static String initPosition(ArrayList<IRadarResult> detectRadar, double heading) {
+  public static String initPositionAndSpeed(ArrayList<IRadarResult> detectRadar, double heading) {
     boolean detectNorth = false;
     boolean detectSouth = false;
     boolean detectWest = false;
@@ -159,19 +171,24 @@ public abstract class Helpers extends Brain {
 
     if (whoAmI == GAMMA) {
       res += (teamA ? Parameters.teamAMainBot1InitX : Parameters.teamBMainBot1InitX) + ":";
-      res += teamA ? Parameters.teamAMainBot1InitY : Parameters.teamBMainBot1InitY;
+      res += (teamA ? Parameters.teamAMainBot1InitY : Parameters.teamBMainBot1InitY) + ":";
+      res += (teamA ? Parameters.teamAMainBotSpeed : Parameters.teamBMainBotSpeed);
     } else if (whoAmI == ALPHA) {
       res += (teamA ? Parameters.teamAMainBot2InitX : Parameters.teamBMainBot2InitX) + ":";
-      res += teamA ? Parameters.teamAMainBot2InitY : Parameters.teamBMainBot2InitY;
+      res += (teamA ? Parameters.teamAMainBot2InitY : Parameters.teamBMainBot2InitY) + ":";
+      res += (teamA ? Parameters.teamAMainBotSpeed : Parameters.teamBMainBotSpeed);
     } else if (whoAmI == BETA) {
       res += (teamA ? Parameters.teamAMainBot3InitX : Parameters.teamBMainBot3InitX) + ":";
-      res += teamA ? Parameters.teamAMainBot3InitY : Parameters.teamBMainBot3InitY;
+      res += (teamA ? Parameters.teamAMainBot3InitY : Parameters.teamBMainBot3InitY) + ":";
+      res += (teamA ? Parameters.teamAMainBotSpeed : Parameters.teamBMainBotSpeed);
     } else if (whoAmI == ROCKY) {
       res += (teamA ? Parameters.teamASecondaryBot1InitX : Parameters.teamBSecondaryBot1InitX) + ":";
-      res += teamA ? Parameters.teamASecondaryBot1InitY : Parameters.teamBSecondaryBot1InitY;
+      res += (teamA ? Parameters.teamASecondaryBot1InitY : Parameters.teamBSecondaryBot1InitY) + ":";
+      res += (teamA ? Parameters.teamASecondaryBotSpeed : Parameters.teamBSecondaryBotSpeed);
     } else {
       res += (teamA ? Parameters.teamASecondaryBot2InitX : Parameters.teamBSecondaryBot2InitX) + ":";
-      res += teamA ? Parameters.teamASecondaryBot2InitY : Parameters.teamBSecondaryBot2InitY;
+      res += (teamA ? Parameters.teamASecondaryBot2InitY : Parameters.teamBSecondaryBot2InitY) + ":";
+      res += (teamA ? Parameters.teamASecondaryBotSpeed : Parameters.teamBSecondaryBotSpeed);
     }
     return res;
   }

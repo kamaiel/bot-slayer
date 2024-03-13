@@ -3,6 +3,7 @@ package algorithms;
 import java.util.ArrayList;
 
 import characteristics.IRadarResult;
+import characteristics.IFrontSensorResult;
 import characteristics.Parameters;
 import grafcet.IState;
 import grafcet.State;
@@ -28,6 +29,7 @@ public class MyBrainSlayer extends Brain {
 
     private IState MOVETO_MAIN;
     private IState TURN_MAIN;
+    private IState FIRE_MAIN;
 
     private static final int ALPHA = 0x1EADDE;
     private static final int BETA = 0x5EC1;
@@ -41,22 +43,25 @@ public class MyBrainSlayer extends Brain {
     private static final int HELP = 0xB53;
     private static final int FOLLOW = 0xB54;
 
-    private static final int FOLLOW_STEP = 600;
+    private static final int FOLLOW_STEP = 100;
 
     private ArrayList<IRadarResult> team, opponents;
 
     private double myX, myY;
-    private double followX, followY = -1.0;
+    private double followX, followY = -1;
+    private double speed;
     private ArrayList<String> messages;
     private int whoAmI;
     private int waitMoveSecondary = 0;
-    private int whenUpdateFollows = FOLLOW_STEP;
+    private int whenUpdateFollows = 0;
+    private int lastMessageCode;
 
     public void activate() {
-        String[] initPosition = Helpers.initPosition(detectRadar(), getHeading()).split(":");
-        whoAmI = Integer.parseInt(initPosition[0]);
-        myX = Double.parseDouble(initPosition[1]);
-        myY = Double.parseDouble(initPosition[2]);
+        String[] initPositionAndSpeed = Helpers.initPositionAndSpeed(detectRadar(), getHeading()).split(":");
+        whoAmI = Integer.parseInt(initPositionAndSpeed[0]);
+        myX = Double.parseDouble(initPositionAndSpeed[1]);
+        myY = Double.parseDouble(initPositionAndSpeed[2]);
+        speed = Double.parseDouble(initPositionAndSpeed[3]);
         currentState = buildGrafcet();
     }
 
@@ -88,27 +93,35 @@ public class MyBrainSlayer extends Brain {
             waitMoveSecondary++;
         });
         MOVEEAST_SECONDARY = new State(() -> {
-            sendLogMessage("Secondary scanning : east");
+            sendLogMessage("Secondary scanning : east | X: "+String.format("%.2f",myX)+", Y: "+String.format("%.2f",myY));
             if (Helpers.isSameDirection(getHeading(), Parameters.EAST)) {
-                move();
-                myX += Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-                myY += Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+                if (!Helpers.isFrontRangeObstacle(detectRadar(),getHeading())) {
+                    move();
+                    myX += speed * Math.cos(getHeading());
+                    myY += speed * Math.sin(getHeading());
+                }
             } else {
-                moveBack();
-                myX -= Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-                myY -= Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+                if (!Helpers.isFrontRangeObstacle(detectRadar(),-getHeading())) {
+                    moveBack();
+                    myX -= speed * Math.cos(getHeading());
+                    myY -= speed * Math.sin(getHeading());
+                }
             }
         });
         MOVEWEST_SECONDARY = new State(() -> {
-            sendLogMessage("Secondary scanning : west");
+            sendLogMessage("Secondary scanning : west | X: "+String.format("%.2f",myX)+", Y: "+String.format("%.2f",myY));
             if (Helpers.isSameDirection(getHeading(), Parameters.WEST)) {
-                move();
-                myX += Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-                myY += Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+                if (!Helpers.isFrontRangeObstacle(detectRadar(),getHeading())) {
+                    move();
+                    myX += speed * Math.cos(getHeading());
+                    myY += speed * Math.sin(getHeading());
+                }
             } else {
-                moveBack();
-                myX -= Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-                myY -= Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+                if (!Helpers.isFrontRangeObstacle(detectRadar(),-getHeading())) {
+                    moveBack();
+                    myX -= speed * Math.cos(getHeading());
+                    myY -= speed * Math.sin(getHeading());
+                }
             }
         });
 
@@ -140,9 +153,11 @@ public class MyBrainSlayer extends Brain {
         });
         MOVETO_INIT_POS_ROCKY = new State(() -> {
             sendLogMessage("Moving to init pos");
-            move();
-            myX += Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-            myY += Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+            if (!Helpers.isFrontRangeObstacle(detectRadar(),getHeading())) {
+                move();
+                myX += speed * Math.cos(getHeading());
+                myY += speed * Math.sin(getHeading());
+            }
         });
 
         INIT.addNextState(INIT_POS_ROCKY);
@@ -163,9 +178,11 @@ public class MyBrainSlayer extends Brain {
         });
         MOVETO_INIT_POS_MARIO = new State(() -> {
             sendLogMessage("Moving to init pos");
-            move();
-            myX += Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-            myY += Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+            if (!Helpers.isFrontRangeObstacle(detectRadar(),getHeading())) {
+                move();
+                myX += speed * Math.cos(getHeading());
+                myY += speed * Math.sin(getHeading());
+            }
         });
 
         INIT.addNextState(INIT_POS_MARIO);
@@ -181,41 +198,77 @@ public class MyBrainSlayer extends Brain {
 
     public void buildMain() {
         // TURN MAIN
-        TURN_MAIN = new State(() -> {
-            if (messages != null && messages.size() != 0) {
+        TURN_MAIN = new State(() -> {     
+            if (messages != null) {
                 for (String msg : messages) {
                     String[] tokens = msg.split(":");
-                    if (Integer.parseInt(tokens[2]) == FOLLOW && Integer.parseInt(tokens[0])==MARIO && whenUpdateFollows>=FOLLOW_STEP) {
-                        if ((followX<0 && followY<0) || !Helpers.asTurnInFrontOfPoint(myX, myY, followX, followY, getHeading())) {
-                            sendLogMessage("followX : " + tokens[3] + " / followY : " + tokens[4]);
+                    if (Integer.parseInt(tokens[2]) == HELP) {
+                        sendLogMessage("HELP");
+                        lastMessageCode = HELP;
+                        followX = Double.parseDouble(tokens[3]);
+                        followY = Double.parseDouble(tokens[4]);
+                    }
+                    if (lastMessageCode!=HELP) {                        
+                        if (Integer.parseInt(tokens[2]) == FOLLOW && Integer.parseInt(tokens[0])==MARIO) {
+                            sendLogMessage("FOLLOW");
+                            lastMessageCode = FOLLOW;
                             followX = Double.parseDouble(tokens[3]);
                             followY = Double.parseDouble(tokens[4]);
-                            whenUpdateFollows=0;
                         }
                     }
-                    // else if ()
                 }
             }
-            if (followX!=-1.0 && followY!=-1.0) stepTurn(Helpers.getDirection(myX, myY, followX, followY, getHeading()));
+            if (followX!=-1 && followY!=-1) stepTurn(Helpers.getDirection(myX, myY, followX, followY, getHeading()));
+             
         });
         MOVETO_MAIN = new State(() -> {
+            sendLogMessage("X: "+String.format("%.2f",myX)+", Y:"+String.format("%.2f",myY)+", dir: "+getHeading());
             whenUpdateFollows++;
-            move();
-            myX += Parameters.teamASecondaryBotSpeed * Math.cos(getHeading());
-            myY += Parameters.teamASecondaryBotSpeed * Math.sin(getHeading());
+            if (!Helpers.isFrontRangeObstacle(detectRadar(),getHeading())) {
+                move();
+                myX += speed * Math.cos(getHeading());
+                myY += speed * Math.sin(getHeading());
+            }
         });
-        // INIT MAIN
+        FIRE_MAIN = new State(() -> {
+            sendLogMessage("FIRE");
+            IFrontSensorResult o = detectFront();
+            if (o.getObjectType()==IFrontSensorResult.Types.OpponentMainBot 
+                || o.getObjectType()==IFrontSensorResult.Types.OpponentSecondaryBot)
+                fire(getHeading());
+            
+            for (IRadarResult op : opponents) {
+                fire(op.getObjectDirection());
+            }
+        });
+
+
+        // TURN MAIN
         INIT.addNextState(TURN_MAIN);
+        TURN_MAIN.addTransitionCondition(INIT.getId(), () -> whoAmI == BETA || whoAmI == ALPHA || whoAmI == GAMMA );
 
-        TURN_MAIN.addNextState(MOVETO_MAIN);
-        TURN_MAIN.addTransitionCondition(INIT.getId(), () -> whoAmI == BETA /* || whoAmI == ALPHA */ );
-
-        // MOVE TO MAIN
+        // MOVETO MAIN
+        TURN_MAIN.addNextState(FIRE_MAIN,MOVETO_MAIN);
         MOVETO_MAIN.addTransitionCondition(TURN_MAIN.getId(),
-                () -> Helpers.asTurnInFrontOfPoint(myX, myY, followX, followY, getHeading()));
+                () -> followX>=0 && followY>=0 && Helpers.asTurnInFrontOfPoint(myX, myY, followX, followY, getHeading()));
 
-        MOVETO_MAIN.addNextState(TURN_MAIN);
-        TURN_MAIN.addTransitionCondition(MOVETO_MAIN.getId(), () -> whenUpdateFollows >= FOLLOW_STEP );
+        MOVETO_MAIN.addNextState(FIRE_MAIN,TURN_MAIN);
+        TURN_MAIN.addTransitionCondition(MOVETO_MAIN.getId(), () -> { 
+            boolean isUpdatingTime = (whenUpdateFollows >= FOLLOW_STEP);
+            if (isUpdatingTime)  whenUpdateFollows=0;
+            return isUpdatingTime;
+        });
+
+        // FIRE MAIN
+        FIRE_MAIN.addTransitionCondition(TURN_MAIN.getId(), () -> opponents!=null && opponents.size()>0);
+        FIRE_MAIN.addTransitionCondition(MOVETO_MAIN.getId(), () -> opponents!=null && opponents.size()>0);
+
+        FIRE_MAIN.addNextState(MOVETO_MAIN);
+        MOVETO_MAIN.addTransitionCondition(FIRE_MAIN.getId(), () -> {
+            whenUpdateFollows = FOLLOW_STEP;
+            return true;
+        });
+
 
     }
 
@@ -235,7 +288,7 @@ public class MyBrainSlayer extends Brain {
         // sendLogMessage("Broadcast");
         boolean asHelp = false;
         opponents = Helpers.isRadarOpponent(detectRadar());
-        for (IRadarResult o : opponents) {
+        for (IRadarResult o : Helpers.isRadarOpponent(detectRadar())) {
             asHelp = true;
             double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
             double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());

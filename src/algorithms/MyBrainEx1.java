@@ -35,10 +35,10 @@ public class MyBrainEx1 extends Brain {
     private int whoAmI;
 
     public void activate() {
-        String[] initPosition = Helpers.initPosition(detectRadar(), getHeading()).split(":");
-        whoAmI = Integer.parseInt(initPosition[0]);
-        myX = Double.parseDouble(initPosition[1]);
-        myY = Double.parseDouble(initPosition[2]);
+        String[] initPositionAndSpeed = Helpers.initPositionAndSpeed(detectRadar(), getHeading()).split(":");
+        whoAmI = Integer.parseInt(initPositionAndSpeed[0]);
+        myX = Double.parseDouble(initPositionAndSpeed[1]);
+        myY = Double.parseDouble(initPositionAndSpeed[2]);
         currentState = buildGrafcet();
     }
 
