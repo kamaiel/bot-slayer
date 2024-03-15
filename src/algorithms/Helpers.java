@@ -77,16 +77,16 @@ public abstract class Helpers extends Brain {
   }
 
 
-  public static boolean isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading) {
+  public static int isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading) {
     for (IRadarResult o : objects) {
-      //System.out.println(heading+" "+o.getObjectDirection()+" "+o.getObjectDistance()+" "+o.getObjectRadius());
-      if (heading+Math.PI/2.5>=o.getObjectDirection() 
-        && heading-Math.PI/2.5<=o.getObjectDirection()
-        && o.getObjectDistance()<4*BOT_RADIUS) {
-        return true;
+      if (o.getObjectDistance()<4*BOT_RADIUS) {
+        //RIGHT
+        if (heading+Math.PI/2.5>=o.getObjectDirection() && o.getObjectDirection()>=heading) return 1; 
+        //LEFT
+        if (heading-Math.PI/2.5<=o.getObjectDirection() && o.getObjectDirection()<=heading) return 0; 
       }
     }
-    return false;
+    return -1;
   }
 
   public static ArrayList<IRadarResult> isRadarOpponent(ArrayList<IRadarResult> objects) {
