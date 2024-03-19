@@ -21,6 +21,9 @@ public class MyBrainSlayer extends Brain {
     private IState TURNWEST_SECONDARY;
     private IState MOVEEAST_SECONDARY;
     private IState MOVEWEST_SECONDARY;
+    private IState TURNSOUTH_SECONDARY;
+    private IState TURNNORTH_SECONDARY;
+    private IState 
 
     private IState MOVETO_ALPHA;
     private IState TURN_ALPHA;
@@ -44,7 +47,7 @@ public class MyBrainSlayer extends Brain {
     private static final int FOLLOW = 0xB54;
 
     private static final int FOLLOW_STEP = 100;
-    private static int FIRE_TIMEOUT_STEP = 100;
+    private static int FIRE_TIMEOUT_STEP = 300;
 
     private ArrayList<IRadarResult> team, opponents;
 
@@ -88,31 +91,33 @@ public class MyBrainSlayer extends Brain {
 
     public void buildSecondary() {
         TURNEAST_SECONDARY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Turning east");
                 stepTurn(Helpers.getDirection(myX, myY, 3000, myY, getHeading()));
             }
         });
         TURNWEST_SECONDARY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Turning west");
                 stepTurn(Helpers.getDirection(myX, myY, 0, myY, getHeading()));
                 sendLogMessage("nb : " + waitMoveSecondary);
                 waitMoveSecondary++;
             }
         });
+
+
         MOVEEAST_SECONDARY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Secondary scanning : east | X: " + String.format("%.2f", myX) + ", Y: "
                         + String.format("%.2f", myY));
                 if (Helpers.isSameDirection(getHeading(), Parameters.EAST)) {
-                    if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading()) < 0) {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading(), myX, myY) < 0) {
                         move();
                         myX += speed * Math.cos(getHeading());
                         myY += speed * Math.sin(getHeading());
                     }
                 } else {
-                    if (Helpers.isFrontRangeObstacle(detectRadar(), -getHeading()) < 0) {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), -getHeading(), myX, myY) < 0) {
                         moveBack();
                         myX -= speed * Math.cos(getHeading());
                         myY -= speed * Math.sin(getHeading());
@@ -121,17 +126,17 @@ public class MyBrainSlayer extends Brain {
             }
         });
         MOVEWEST_SECONDARY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Secondary scanning : west | X: " + String.format("%.2f", myX) + ", Y: "
                         + String.format("%.2f", myY));
                 if (Helpers.isSameDirection(getHeading(), Parameters.WEST)) {
-                    if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading()) < 0) {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading(), myX, myY) < 0) {
                         move();
                         myX += speed * Math.cos(getHeading());
                         myY += speed * Math.sin(getHeading());
                     }
                 } else {
-                    if (Helpers.isFrontRangeObstacle(detectRadar(), -getHeading()) < 0) {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), -getHeading(), myX, myY) < 0) {
                         moveBack();
                         myX -= speed * Math.cos(getHeading());
                         myY -= speed * Math.sin(getHeading());
@@ -163,15 +168,15 @@ public class MyBrainSlayer extends Brain {
 
     public void buildRocky() {
         INIT_POS_ROCKY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Turning to init pos");
                 stepTurn(Helpers.getDirection(myX, myY, myX, 500, getHeading()));
             }
         });
         MOVETO_INIT_POS_ROCKY = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("Moving to init pos");
-                if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading()) < 0) {
+                if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading(), myX, myY) < 0) {
                     move();
                     myX += speed * Math.cos(getHeading());
                     myY += speed * Math.sin(getHeading());
@@ -192,15 +197,15 @@ public class MyBrainSlayer extends Brain {
 
     public void buildMario() {
         INIT_POS_MARIO = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 // sendLogMessage("Turning to init pos");
                 stepTurn(Helpers.getDirection(myX, myY, myX, 1500, getHeading()));
-            } 
+            }
         });
         MOVETO_INIT_POS_MARIO = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 // sendLogMessage("Moving to init pos");
-                if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading()) < 0) {
+                if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading(), myX, myY) < 0) {
                     move();
                     myX += speed * Math.cos(getHeading());
                     myY += speed * Math.sin(getHeading());
@@ -229,52 +234,54 @@ public class MyBrainSlayer extends Brain {
         // sinon avancer(pattern ?)
 
         MOVETO_MAIN = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("X: " + String.format("%.2f", myX) + ", Y:" + String.format("%.2f", myY) + ", dir: "
                         + getHeading());
-                int obstacle = Helpers.isFrontRangeObstacle(detectRadar(), getHeading());
-                tracking++;
+                int obstacle = Helpers.isFrontRangeObstacle(detectRadar(), getHeading(),myX,myY);
+                if (lastMessageCode==HELP) tracking++;
 
                 if (obstacle < 0) {
                     whenUpdateFollows++;
-                    /*
-                    if (lastMessageCode==HELP && whenUpdateFollows%7==0) {
+                    if (lastMessageCode == HELP && whenUpdateFollows % 7 == 0) {
                         boolean canFire = true;
                         double angleFollow = Math.atan2(followY - myY, followX - myX);
                         if (messages != null && messages.size() > 0) {
                             for (String msg : messages) {
                                 String[] tokens = msg.split(":");
-                                if (Integer.parseInt(tokens[0]) != whoAmI) {
+                                if (Integer.parseInt(tokens[0]) != whoAmI && Integer.parseInt(tokens[2])==FOLLOW) {
                                     double tmpX = Double.parseDouble(tokens[3]);
                                     double tmpY = Double.parseDouble(tokens[4]);
                                     double angle = Math.atan2(tmpY - myY, tmpX - myX);
-                                    if (Math.abs(Helpers.normalize(angleFollow) - Helpers.normalize(angle))<Math.PI/6){
+                                    if (Math.abs(Helpers.normalize(angleFollow) - Helpers.normalize(angle)) < Math.PI/6 || Math.sqrt(Math.pow(myY-followY,2) + Math.pow(myX-followX,2)) > 1000) {
                                         canFire = false;
                                         break;
                                     }
                                 }
-                            }   
+                            }
                         }
                         if (canFire) {
                             sendLogMessage("FIRE FAR AWAY");
                             fire(angleFollow);
                         }
-                    } */
-                    //else {
+                    } else {
                         move();
                         myX += speed * Math.cos(getHeading());
                         myY += speed * Math.sin(getHeading());
-                    //} 
-                
-                } else if (obstacle > 0) {
+                    }
+
+                } else if (obstacle == 1 || obstacle == 2) {
                     stepTurn(Parameters.Direction.LEFT);
-                } else {
+                } else if (obstacle == 0) {
                     stepTurn(Parameters.Direction.RIGHT);
+                } else if (obstacle == 3) {
+                    followX = -followX;
+                } else {
+                    followY = -followY;
                 }
             }
         });
         FIRE_MAIN = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("FIRE");
                 lastMessageCode = 0;
                 firing++;
@@ -288,7 +295,7 @@ public class MyBrainSlayer extends Brain {
                     fire(op.getObjectDirection());
                 }
                 // } else {
-                // if (Helpers.isFrontRangeObstacle(detectRadar(),-getHeading())<0) {
+                // if (Helpers.isFrontRangeObstacle(detectRadar(),-getHeading(), myX, myY)<0) {
                 // moveBack();
                 // myX -= speed * Math.cos(getHeading());
                 // myY -= speed * Math.sin(getHeading());
@@ -297,7 +304,7 @@ public class MyBrainSlayer extends Brain {
             }
         });
         TURN_MAIN = new State(() -> {
-            if (getHealth()>0) {
+            if (getHealth() > 0) {
                 sendLogMessage("TURN");
                 if (messages != null && messages.size() > 0) {
                     boolean followingHasBroadcast = false;
@@ -314,20 +321,21 @@ public class MyBrainSlayer extends Brain {
                                     followingNeedHelp = true;
                                 followX = Double.parseDouble(tokens[3]);
                                 followY = Double.parseDouble(tokens[4]);
-                                if (lastMessageCode == FOLLOW && Math.abs(followY - myY) <= 100)
+                                if (lastMessageCode == FOLLOW && Math.abs(followY - myY) <= 250)
                                     followY = myY;
                             }
                         } else if (Integer.parseInt(tokens[2]) == HELP)
                             otherNeedHelp = true;
                     }
-                    if ((!followingHasBroadcast && secondaryHasStartBroadcast) || (otherNeedHelp && !followingNeedHelp)) {
+                    if ((!followingHasBroadcast && secondaryHasStartBroadcast)
+                            || (otherNeedHelp && !followingNeedHelp)) {
                         for (String msg : messages) {
                             String[] tokens = msg.split(":");
                             if (lastMessageCode != HELP) {
                                 lastMessageCode = Integer.parseInt(tokens[2]);
                                 followX = Double.parseDouble(tokens[3]);
                                 followY = Double.parseDouble(tokens[4]);
-                                if (lastMessageCode == FOLLOW && Math.abs(followY - myY) <= 100)
+                                if (lastMessageCode == FOLLOW && Math.abs(followY - myY) <= 250)
                                     followY = myY;
                                 following = Integer.parseInt(tokens[0]);
                                 if (lastMessageCode == HELP)
@@ -336,7 +344,8 @@ public class MyBrainSlayer extends Brain {
                         }
                     }
 
-                    sendLogMessage(String.valueOf(followingHasBroadcast)+" "+String.valueOf(otherNeedHelp)+" "+String.valueOf(followingNeedHelp));
+                    sendLogMessage(String.valueOf(followingHasBroadcast) + " " + String.valueOf(otherNeedHelp) + " "
+                            + String.valueOf(followingNeedHelp));
 
                 }
                 if (followX != -1 && followY != -1)
@@ -353,7 +362,7 @@ public class MyBrainSlayer extends Brain {
                 following = MARIO;
                 return true;
             }
-            
+
             if (whoAmI == GAMMA) {
                 following = ROCKY;
                 return true;
@@ -364,7 +373,7 @@ public class MyBrainSlayer extends Brain {
             boolean isUpdatingTime = (whenUpdateFollows >= FOLLOW_STEP && tracking >= FIRE_TIMEOUT_STEP);
             if (isUpdatingTime) {
                 whenUpdateFollows = 0;
-                lastMessageCode = 0;
+                //lastMessageCode = 0;
             }
             return isUpdatingTime;
         });
@@ -401,7 +410,7 @@ public class MyBrainSlayer extends Brain {
             broadcast(whoAmI + ":" + TEAM + ":" + HELP + ":" + enemyX + ":" + enemyY + ":" + OVER);
             messages = fetchAllMessages();
         }
-        if (!asHelp && getHealth()>0) {
+        if (!asHelp && getHealth() > 0) {
             broadcast(whoAmI + ":" + TEAM + ":" + FOLLOW + ":" + myX + ":" + myY + ":" + OVER);
             messages = fetchAllMessages();
         }

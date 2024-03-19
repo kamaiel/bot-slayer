@@ -67,25 +67,29 @@ public abstract class Helpers extends Brain {
     double myTop = myY - BOT_RADIUS * 1.5;
     double myBottom = myY + BOT_RADIUS * 1.5;
     for (IRadarResult o : objects) {
-      double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
-      double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
-      double enemyTop = enemyY - BOT_RADIUS * 1.5;
-      double enemyBottom = enemyY + BOT_RADIUS * 1.5;
-      if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
-        if (myX < enemyX)
-          return EnemyDirection.WEST;
-        else
-          return EnemyDirection.EAST;
+      if (o.getObjectType() != IRadarResult.Types.BULLET) {
+        double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
+        double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
+        double enemyTop = enemyY - BOT_RADIUS * 1.5;
+        double enemyBottom = enemyY + BOT_RADIUS * 1.5;
+        if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
+          if (myX < enemyX)
+            return EnemyDirection.WEST;
+          else
+            return EnemyDirection.EAST;
+        }
       }
     }
     return EnemyDirection.UNDEFINED;
   }
 
 
-  public static int isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading) {
+  public static int isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading, double myX, double myY) {
     int res = -1;
+    if (myX<=2*BOT_RADIUS || myX>=3000-2*BOT_RADIUS) return 3;
+    if (myY<=2*BOT_RADIUS || myY>=2000-2*BOT_RADIUS) return 4;
     for (IRadarResult o : objects) {
-      if (o.getObjectDistance()<4*BOT_RADIUS) {
+      if (o.getObjectType()!=IRadarResult.Types.BULLET && o.getObjectDistance()<4*BOT_RADIUS) {
         //RIGHT
         if (heading+Math.PI/2.5>=o.getObjectDirection() && o.getObjectDirection()>=heading) {
             if (res>=0) res = 2;
