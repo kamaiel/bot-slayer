@@ -30,7 +30,7 @@ public abstract class Helpers extends Brain {
     EAST, WEST, UNDEFINED
   }
 
-  private static double normalize(double dir) {
+  public static double normalize(double dir) {
     double res = dir;
     while (res < 0)
       res += 2 * Math.PI;
@@ -58,14 +58,19 @@ public abstract class Helpers extends Brain {
   }
 
   public static EnemyDirection isFrontRangeOpponent(ArrayList<IRadarResult> objects, double myX, double myY) {
+    /*
     ArrayList<IRadarResult> opponents = isRadarOpponent(objects);
-    double myTop = myY - BOT_RADIUS * 2;
-    double myBottom = myY + BOT_RADIUS * 2;
-    for (IRadarResult o : opponents) {
+    for (IRadarResult o : objects) {
+      if (o.getObjectType() == IRadarResult.Types.BULLET)  opponents.add(o);
+   r }
+    */
+    double myTop = myY - BOT_RADIUS * 1.5;
+    double myBottom = myY + BOT_RADIUS * 1.5;
+    for (IRadarResult o : objects) {
       double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
       double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
-      double enemyTop = enemyY - BOT_RADIUS * 2;
-      double enemyBottom = enemyY + BOT_RADIUS * 2;
+      double enemyTop = enemyY - BOT_RADIUS * 1.5;
+      double enemyBottom = enemyY + BOT_RADIUS * 1.5;
       if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
         if (myX < enemyX)
           return EnemyDirection.WEST;
@@ -78,15 +83,22 @@ public abstract class Helpers extends Brain {
 
 
   public static int isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading) {
+    int res = -1;
     for (IRadarResult o : objects) {
       if (o.getObjectDistance()<4*BOT_RADIUS) {
         //RIGHT
-        if (heading+Math.PI/2.5>=o.getObjectDirection() && o.getObjectDirection()>=heading) return 1; 
+        if (heading+Math.PI/2.5>=o.getObjectDirection() && o.getObjectDirection()>=heading) {
+            if (res>=0) res = 2;
+            else res = 1;
+        }
         //LEFT
-        if (heading-Math.PI/2.5<=o.getObjectDirection() && o.getObjectDirection()<=heading) return 0; 
+        if (heading-Math.PI/2.5<=o.getObjectDirection() && o.getObjectDirection()<=heading) {
+            if (res>=0) res = 2;
+            else res = 0;
+        }
       }
     }
-    return -1;
+    return res;
   }
 
   public static ArrayList<IRadarResult> isRadarOpponent(ArrayList<IRadarResult> objects) {
