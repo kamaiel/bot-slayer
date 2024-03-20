@@ -21,9 +21,8 @@ public class MyBrainSlayer extends Brain {
     private IState TURNWEST_SECONDARY;
     private IState MOVEEAST_SECONDARY;
     private IState MOVEWEST_SECONDARY;
-    private IState TURNSOUTH_SECONDARY;
-    private IState TURNNORTH_SECONDARY;
-    private IState 
+    private IState TURN_SECONDARY;
+    private IState MOVE_SECONDARY;
 
     private IState MOVETO_ALPHA;
     private IState TURN_ALPHA;
@@ -63,6 +62,9 @@ public class MyBrainSlayer extends Brain {
     private int following; // which robot to follow
     private int tracking = FIRE_TIMEOUT_STEP; // counter after firing before update follow
     private boolean secondaryHasStartBroadcast = false; // because Main broadcast first
+    private boolean forward = true;
+    private double directionSecondary;
+    private double oldheading;
 
     public void activate() {
         String[] initPositionAndSpeed = Helpers.initPositionAndSpeed(detectRadar(), getHeading()).split(":");
@@ -90,6 +92,95 @@ public class MyBrainSlayer extends Brain {
     }
 
     public void buildSecondary() {
+
+        TURN_SECONDARY = new State(() -> {
+            if (getHealth()>0) {
+                if (waitMoveSecondary<=666) waitMoveSecondary++;
+                if (myX<1500 && myY<1000) {
+                    if (oldheading==Parameters.NORTH) {
+                        directionSecondary = Parameters.EAST;
+                        stepTurn(Parameters.Direction.RIGHT);
+                    }
+                    if (oldheading==Parameters.WEST) {
+                        directionSecondary = Parameters.SOUTH;
+                        stepTurn(Parameters.Direction.LEFT);
+                    }
+                    sendLogMessage("here1");
+                }
+                if (myX>1500 && myY<1000) {
+                    if (oldheading==Parameters.EAST) {
+                        directionSecondary = Parameters.SOUTH;
+                        stepTurn(Parameters.Direction.RIGHT);
+                    }
+                    if (oldheading==Parameters.NORTH) {
+                        directionSecondary = Parameters.WEST;
+                        stepTurn(Parameters.Direction.LEFT);
+                    }
+                    sendLogMessage("here2");
+                }
+                if (myX<1500 && myY>1000) {
+                    if (oldheading==Parameters.SOUTH) {
+                        directionSecondary = Parameters.EAST;
+                        stepTurn(Parameters.Direction.LEFT);
+                    }
+                    if (oldheading==Parameters.WEST) {
+                        directionSecondary = Parameters.NORTH;
+                        stepTurn(Parameters.Direction.RIGHT);
+                    }
+                    sendLogMessage("here2");
+                }
+                if (myX>1500 && myY>1000) {
+                    if (oldheading==Parameters.SOUTH) {
+                        directionSecondary = Parameters.WEST;
+                        stepTurn(Parameters.Direction.RIGHT);
+                    }
+                    if (oldheading==Parameters.EAST) {
+                        directionSecondary = Parameters.NORTH;
+                        stepTurn(Parameters.Direction.LEFT);
+                    }
+                    sendLogMessage("here3");
+                }
+                
+            }
+        });
+
+        MOVE_SECONDARY = new State(() -> {
+            if (getHealth()>0) {
+                if (forward) {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), getHeading(), myX, myY) < 0) {
+                        move();
+                        myX += speed * Math.cos(getHeading());
+                        myY += speed * Math.sin(getHeading());
+                    } else {
+                        directionSecondary = Helpers.normalize(directionSecondary+Math.PI);
+                        forward = false;
+                    }
+                } else {
+                    if (Helpers.isFrontRangeObstacle(detectRadar(), Helpers.normalize(getHeading()+Math.PI), myX, myY) < 0) {
+                        moveBack();
+                        myX -= speed * Math.cos(getHeading());
+                        myY -= speed * Math.sin(getHeading());
+                    } else {
+                        directionSecondary = Helpers.normalize(directionSecondary+Math.PI);
+                        forward = true;
+                    }
+                }
+            }
+        });
+
+        TURN_SECONDARY.addNextState(MOVE_SECONDARY);
+        MOVE_SECONDARY.addTransitionCondition(TURN_SECONDARY.getId(), () -> {
+            return waitMoveSecondary>666 &&
+            (forward?Helpers.isSameDirection(getHeading(),directionSecondary):Helpers.isSameDirection(Helpers.normalize(getHeading()+Math.PI),directionSecondary));
+        });
+
+        MOVE_SECONDARY.addNextState(TURN_SECONDARY);
+        TURN_SECONDARY.addTransitionCondition(MOVE_SECONDARY.getId(), () -> {
+            oldheading = directionSecondary;
+            return (myX>=2500 || myX<=500) && (myY>=1500 || myY<=500);
+        });
+
+        /*
         TURNEAST_SECONDARY = new State(() -> {
             if (getHealth() > 0) {
                 sendLogMessage("Turning east");
@@ -164,6 +255,7 @@ public class MyBrainSlayer extends Brain {
         MOVEWEST_SECONDARY.addNextState(MOVEEAST_SECONDARY);
         MOVEEAST_SECONDARY.addTransitionCondition(MOVEWEST_SECONDARY.getId(), () -> myX <= 500
                 || Helpers.isFrontRangeOpponent(detectRadar(), myX, myY) == Helpers.EnemyDirection.EAST);
+        */
     }
 
     public void buildRocky() {
@@ -185,14 +277,25 @@ public class MyBrainSlayer extends Brain {
         });
 
         INIT.addNextState(INIT_POS_ROCKY);
-        INIT_POS_ROCKY.addTransitionCondition(INIT.getId(), () -> whoAmI == ROCKY);
+        INIT_POS_ROCKY.addTransitionCondition(INIT.getId(), () -> {
+            if (whoAmI == ROCKY) {
+                waitMoveSecondary = 0;
+                return true;
+            } return false;
+        });
 
         INIT_POS_ROCKY.addNextState(MOVETO_INIT_POS_ROCKY);
         MOVETO_INIT_POS_ROCKY.addTransitionCondition(INIT_POS_ROCKY.getId(),
                 () -> Helpers.asTurnInFrontOfPoint(myX, myY, myX, 500, getHeading()));
 
-        MOVETO_INIT_POS_ROCKY.addNextState(TURNWEST_SECONDARY);
-        TURNWEST_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_ROCKY.getId(), () -> myY <= 500);
+        MOVETO_INIT_POS_ROCKY.addNextState(TURN_SECONDARY);
+        TURN_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_ROCKY.getId(), () -> {
+            directionSecondary = Parameters.NORTH;
+            oldheading = directionSecondary;
+            return myY <= 500;
+        });
+        //MOVETO_INIT_POS_ROCKY.addNextState(TURNWEST_SECONDARY);
+        //TURNWEST_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_ROCKY.getId(), () -> myY <= 500);
     }
 
     public void buildMario() {
@@ -214,14 +317,26 @@ public class MyBrainSlayer extends Brain {
         });
 
         INIT.addNextState(INIT_POS_MARIO);
-        INIT_POS_MARIO.addTransitionCondition(INIT.getId(), () -> whoAmI == MARIO);
+        INIT_POS_MARIO.addTransitionCondition(INIT.getId(), () -> {
+        if (whoAmI == MARIO) {
+                waitMoveSecondary = 667;
+                return true;
+            } return false;
+        });
+
 
         INIT_POS_MARIO.addNextState(MOVETO_INIT_POS_MARIO);
         MOVETO_INIT_POS_MARIO.addTransitionCondition(INIT_POS_MARIO.getId(),
                 () -> Helpers.asTurnInFrontOfPoint(myX, myY, myX, 1500, getHeading()));
 
-        MOVETO_INIT_POS_MARIO.addNextState(TURNEAST_SECONDARY);
-        TURNEAST_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_MARIO.getId(), () -> myY >= 1500);
+        MOVETO_INIT_POS_MARIO.addNextState(TURN_SECONDARY);
+        TURN_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_MARIO.getId(), () -> {
+            directionSecondary = Parameters.SOUTH;
+            oldheading = directionSecondary;
+            return myY >= 1500;
+        });
+        //MOVETO_INIT_POS_MARIO.addNextState(TURNEAST_SECONDARY);
+        //TURNEAST_SECONDARY.addTransitionCondition(MOVETO_INIT_POS_MARIO.getId(), () -> myY >= 1500);
     }
 
     public void buildMain() {
