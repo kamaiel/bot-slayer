@@ -23,11 +23,11 @@ public abstract class Helpers extends Brain {
   private static final int MARIO = 0x5EC0;
   private static final int TEAM = 0xBADDAD;
 
-  private static final double ANGLEPRECISION = 0.05;
+  private static final double ANGLEPRECISION = 0.01;
   private static final double BOT_RADIUS = 50.0;
 
   public enum EnemyDirection {
-    EAST, WEST, UNDEFINED
+    EAST, WEST, NORTH, SOUTH, UNDEFINED
   }
 
   public static double normalize(double dir) {
@@ -57,7 +57,7 @@ public abstract class Helpers extends Brain {
     return sensor == TEAMMATEMAIN || sensor == TEAMMATESECOND;
   }
 
-  public static EnemyDirection isFrontRangeOpponent(ArrayList<IRadarResult> objects, double myX, double myY) {
+  public static boolean isFrontRangeOpponent(ArrayList<IRadarResult> objects, double myX, double myY, double dir) {
     /*
     ArrayList<IRadarResult> opponents = isRadarOpponent(objects);
     for (IRadarResult o : objects) {
@@ -66,23 +66,40 @@ public abstract class Helpers extends Brain {
     */
     double myTop = myY - BOT_RADIUS * 1.5;
     double myBottom = myY + BOT_RADIUS * 1.5;
+    double myLeft = myX - BOT_RADIUS * 1.5;
+    double myRight = myX + BOT_RADIUS * 1.5;
     for (IRadarResult o : objects) {
       if (o.getObjectType() != IRadarResult.Types.BULLET) {
         double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
         double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
-        double enemyTop = enemyY - BOT_RADIUS * 1.5;
-        double enemyBottom = enemyY + BOT_RADIUS * 1.5;
-        if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
-          if (myX < enemyX)
-            return EnemyDirection.WEST;
-          else
-            return EnemyDirection.EAST;
+        if (dir==Parameters.EAST || dir==Parameters.WEST) {
+          double enemyTop = enemyY - BOT_RADIUS * 1.5;
+          double enemyBottom = enemyY + BOT_RADIUS * 1.5;
+          if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
+            return ((myX<enemyX && dir==Parameters.EAST)||(myX>=enemyX && dir==Parameters.WEST));
+            /*
+            if (myX < enemyX)
+              return false;//EnemyDirection.WEST;
+            else
+              return true; //EnemyDirection.EAST;
+            */
+          }
+        } else {
+          double enemyLeft = enemyX - BOT_RADIUS * 1.5;
+          double enemyRight = enemyX + BOT_RADIUS * 1.5;
+          if ((enemyX <= myX && enemyRight > myLeft) || (enemyX >= myX && enemyLeft < myRight)) {
+            return ((myY<enemyY && dir==Parameters.SOUTH)||(myY>=enemyY && dir==Parameters.NORTH));
+            /*if (myY < enemyY)
+              return false; //EnemyDirection.SOUTH;
+            else
+              return true; //EnemyDirection.NORTH;*/
+          }       
+
         }
       }
     }
-    return EnemyDirection.UNDEFINED;
+    return false;//EnemyDirection.UNDEFINED;
   }
-
 
   public static int isFrontRangeObstacle(ArrayList<IRadarResult> objects, double heading, double myX, double myY) {
     int res = -1;
