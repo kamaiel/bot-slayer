@@ -23,7 +23,7 @@ public abstract class Helpers extends Brain {
   private static final int MARIO = 0x5EC0;
   private static final int TEAM = 0xBADDAD;
 
-  private static final double ANGLEPRECISION = 0.01;
+  private static final double ANGLEPRECISION = 0.05;
   private static final double BOT_RADIUS = 50.0;
 
   public enum EnemyDirection {
@@ -64,17 +64,17 @@ public abstract class Helpers extends Brain {
       if (o.getObjectType() == IRadarResult.Types.BULLET)  opponents.add(o);
    r }
     */
-    double myTop = myY - BOT_RADIUS * 1.5;
-    double myBottom = myY + BOT_RADIUS * 1.5;
-    double myLeft = myX - BOT_RADIUS * 1.5;
-    double myRight = myX + BOT_RADIUS * 1.5;
+    double myTop = myY - BOT_RADIUS * 1.2;
+    double myBottom = myY + BOT_RADIUS * 1.2;
+    double myLeft = myX - BOT_RADIUS * 1.2;
+    double myRight = myX + BOT_RADIUS * 1.2;
     for (IRadarResult o : objects) {
       if (o.getObjectType() != IRadarResult.Types.BULLET) {
         double enemyX = myX + o.getObjectDistance() * Math.cos(o.getObjectDirection());
         double enemyY = myY + o.getObjectDistance() * Math.sin(o.getObjectDirection());
         if (dir==Parameters.EAST || dir==Parameters.WEST) {
-          double enemyTop = enemyY - BOT_RADIUS * 1.5;
-          double enemyBottom = enemyY + BOT_RADIUS * 1.5;
+          double enemyTop = enemyY - BOT_RADIUS * 1.2;
+          double enemyBottom = enemyY + BOT_RADIUS * 1.2;
           if ((enemyY <= myY && enemyBottom > myTop) || (enemyY >= myY && enemyTop < myBottom)) {
             return ((myX<enemyX && dir==Parameters.EAST)||(myX>=enemyX && dir==Parameters.WEST));
             /*
@@ -85,8 +85,8 @@ public abstract class Helpers extends Brain {
             */
           }
         } else {
-          double enemyLeft = enemyX - BOT_RADIUS * 1.5;
-          double enemyRight = enemyX + BOT_RADIUS * 1.5;
+          double enemyLeft = enemyX - BOT_RADIUS * 1.2;
+          double enemyRight = enemyX + BOT_RADIUS * 1.2;
           if ((enemyX <= myX && enemyRight > myLeft) || (enemyX >= myX && enemyLeft < myRight)) {
             return ((myY<enemyY && dir==Parameters.SOUTH)||(myY>=enemyY && dir==Parameters.NORTH));
             /*if (myY < enemyY)
@@ -94,7 +94,6 @@ public abstract class Helpers extends Brain {
             else
               return true; //EnemyDirection.NORTH;*/
           }       
-
         }
       }
     }
@@ -127,7 +126,8 @@ public abstract class Helpers extends Brain {
 
     for (IRadarResult o : objects) {
           if (o.getObjectType() == IRadarResult.Types.OpponentMainBot
-          || o.getObjectType() == IRadarResult.Types.OpponentSecondaryBot) {
+          || o.getObjectType() == IRadarResult.Types.OpponentSecondaryBot 
+          ) {
         res.add(o);
       }
     }
