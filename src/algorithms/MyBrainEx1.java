@@ -4,9 +4,10 @@ import java.util.ArrayList;
 
 import characteristics.IRadarResult;
 import characteristics.Parameters;
-import grafcet.IState;
-import grafcet.State;
 import robotsimulator.Brain;
+import slayers.Helpers;
+import slayers.IState;
+import slayers.State;
 
 public class MyBrainEx1 extends Brain {
 

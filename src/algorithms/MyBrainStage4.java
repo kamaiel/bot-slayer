@@ -2,9 +2,10 @@ package algorithms;
 
 import characteristics.IRadarResult;
 import characteristics.Parameters;
-import grafcet.IState;
-import grafcet.State;
 import robotsimulator.Brain;
+import slayers.Helpers;
+import slayers.IState;
+import slayers.State;
 
 public class MyBrainStage4 extends Brain {
     IState INIT;

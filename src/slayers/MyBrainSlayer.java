@@ -1,4 +1,4 @@
-package algorithms;
+package slayers;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -6,9 +6,8 @@ import java.util.Random;
 import characteristics.IRadarResult;
 import characteristics.IFrontSensorResult;
 import characteristics.Parameters;
-import grafcet.IState;
-import grafcet.State;
 import robotsimulator.Brain;
+
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Ellipse2D;
@@ -70,7 +69,7 @@ public class MyBrainSlayer extends Brain {
     private double directionSecondary;
     private double oldheading;
 
-    private int helpCooldown = 250; // Cooldown pour suivre un help avant màj
+    private int helpCooldown = 75; // Cooldown pour suivre un help avant màj
     private int helpCount = 0;
 
     public void activate() {
@@ -304,18 +303,18 @@ public class MyBrainSlayer extends Brain {
                             && followY + 50 > oY && followY - 50 < oY) {
                         // followX = 1500;
                         // followY = 1000;
-                        fireAngle = new Random().nextDouble() * 2 * Math.PI;
+                        fireAngle = getHeading();
                     }
                 }
 
-                if (opponents != null && opponents.size() > 0) {
+                /* if (opponents != null && opponents.size() > 0) {
                     for (IRadarResult op : opponents) {
                         fire(op.getObjectDirection());
                     }
                 }
                 for (IRadarResult op : opponents) {
                     fire(op.getObjectDirection());
-                }
+                } */
 
                 if (helpCount % 7 == 0) {
                     boolean canFire = true;
@@ -409,7 +408,7 @@ public class MyBrainSlayer extends Brain {
         TURN_MAIN.addTransitionCondition(MOVETO_MAIN.getId(), () -> {
             return helpCount % helpCooldown == 0;
         });
-        TURN_MAIN.addNextState(MOVETO_MAIN);
+        TURN_MAIN.addNextState(FIRE_MAIN, MOVETO_MAIN);
 
         // FIRE_MAIN
         FIRE_MAIN.addTransitionCondition(TURN_MAIN.getId(), () -> opponents != null && opponents.size() > 0);

@@ -1,4 +1,4 @@
-package grafcet;
+package slayers;
 
 import java.util.ArrayList;
 import java.util.HashMap;

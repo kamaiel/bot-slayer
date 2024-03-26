@@ -22,7 +22,7 @@ public class Parameters {
   //---TEAM-A-PARAMETERS---//
   //-----------------------//
   public static final String teamAName = "KD Runners";
-  public static final String teamAMainBotBrainClassName = "algorithms.MyBrainSlayer"; //class given by name; is supposed to extends robotsimulator.Brain
+  public static final String teamAMainBotBrainClassName = "slayers.MyBrainSlayer"; //class given by name; is supposed to extends robotsimulator.Brain
   // public static final String teamAMainBotBrainClassName = "algorithms.BootingBerzerk";
   public static final String teamAMainBotAvatar = "avatars/cyclope.png"; //path relative to location of ant build.xml file
   public static final double teamAMainBotRadius = 50, //1 unit = 1mm, body radius
@@ -41,7 +41,7 @@ public class Parameters {
                              teamAMainBot3InitY = 1200, //1 unit = 1mm, coordinate of central point
                              teamAMainBot3InitHeading = EAST; //clockwise trigonometric unit, according to screen pixel coordinate reference
 
-  public static final String teamASecondaryBotBrainClassName = "algorithms.MyBrainSlayer"; //class given by name; is supposed to extends robotsimulator.Brain
+  public static final String teamASecondaryBotBrainClassName = "slayers.MyBrainSlayer"; //class given by name; is supposed to extends robotsimulator.Brain
   // public static final String teamASecondaryBotBrainClassName = "algorithms.BootingBerzerk";
   public static final String teamASecondaryBotAvatar = "avatars/NicePng_spaceship-sprite-png_3369998.png"; //path relative to location of ant build.xml file
   public static final double teamASecondaryBotRadius = 50, //1 unit = 1mm, body radius

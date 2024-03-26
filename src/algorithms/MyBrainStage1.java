@@ -7,9 +7,10 @@
 package algorithms;
 
 import robotsimulator.Brain;
+import slayers.Helpers;
+import slayers.IState;
+import slayers.State;
 import characteristics.Parameters;
-import grafcet.IState;
-import grafcet.State;
 
 public class MyBrainStage1 extends Brain {
   private IState stateMachineBot;
